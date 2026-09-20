@@ -203,6 +203,12 @@
             box-shadow: var(--card-shadow);
             margin-bottom: 20px;
             border-left: 5px solid var(--primary-color);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .feed-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
 
         .feed-card.event {
@@ -527,15 +533,16 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // REPLACE THESE PLACEHOLDERS WITH YOUR ACTUAL FIREBASE CREDENTIALS
+        // CONFIG CREDENTIALS FROM YOUR FIREBASE PROJECT
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyCvr_0yXQGVG6k_JTi1PMVnSxJHNcx4rwU",
+            authDomain: "polaris-project-16599.firebaseapp.com",
+            databaseURL: "https://polaris-project-16599-default-rtdb.firebaseio.com",
+            projectId: "polaris-project-16599",
+            storageBucket: "polaris-project-16599.firebasestorage.app",
+            messagingSenderId: "109438346449",
+            appId: "1:109438346449:web:0c6783f03972bf72d11f00",
+            measurementId: "G-0387WMREMC"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -563,17 +570,25 @@
                 const cardDiv = document.createElement('div');
                 cardDiv.className = `feed-card ${isEvent ? 'event' : ''}`;
                 
+                // Make the card interactive and clickable to open in polarispost.html
+                cardDiv.style.cursor = 'pointer';
+                cardDiv.addEventListener('click', () => {
+                    window.location.href = `polarispost.html?id=${key}`;
+                });
+                
                 cardDiv.innerHTML = `
                     <span class="badge ${isEvent ? 'badge-event' : 'badge-post'}">${isEvent ? 'UPCOMING EVENT' : 'NEWS UPDATE'}</span>
                     <h3>${item.title}</h3>
-                    ${isEvent ? `<p><strong>📅 Date:</strong> ${item.date} | <strong>⏰ Time:</strong> ${item.time \vert{}\vert{} 'TBD'} \vert{} <strong>📍 Location:</strong> ${item.location || 'TBD'} </p>` : `<p style="font-size: 0.85rem; color: #66";>Published on: ${item.date}</p>`}
+                    ${isEvent ? `<p><strong>📅 Date:</strong> ${item.date} | <strong>⏰ Time:</strong> ${item.time \vert{}\vert{} 'TBD'} \vert{} <strong>📍 Location:</strong> ${item.location || 'TBD'} </p>` : `<p style="font-size: 0.85rem; color: #66;">Published on: ${item.date}</p>`}
                     <p>${item.content.replace(/\n/g, '<br>')}</p>
+                    <p style="font-size: 0.85rem; color: var(--primary-color); margin-top: 10px; font-weight: 600;">Click to view full post &rarr;</p>
                 `;
                 liveFeedContainer.appendChild(cardDiv);
             });
         });
 
         // KTRH Form Submission
+        document.getElementById('ktrhForm').appendEventListener = null; // safe clear
         document.getElementById('ktrhForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
