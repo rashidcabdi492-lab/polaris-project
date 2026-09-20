@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Polaris FC - Admin Dashboard</title>
 
-    
     <style>
         :root {
             --primary-color: #0d47a1;
@@ -416,6 +415,17 @@
     </div>
 
     <script>
+        // BROADCAST CHANNEL SETUP (REAL-TIME COMMUNICATION)
+        const polarisChannel = new BroadcastChannel('polaris_club_channel');
+
+        function notifyPublicTabs(type = 'NEW_POST_PUBLISHED', data = {}) {
+            polarisChannel.postMessage({
+                type: type,
+                payload: data,
+                timestamp: Date.now()
+            });
+        }
+
         // SIDEBAR TOGGLE & SECTION SWITCHING
         const menuToggle = document.getElementById('menuToggle');
         const sidebar = document.getElementById('sidebar');
@@ -488,7 +498,7 @@
                 row.innerHTML = `
                     <td><span class="badge ${badgeClass}">${isEvent ? 'EVENT' : 'POST'}</span></td>
                     <td><strong>${item.title}</strong></td>
-                    <td>${isEvent ? `📅 ${item.date} | 📍 ${item.location || 'N/A'}` : `Posted: ${item.date}`}</td>
+                    <td>${isEvent ? `📅 ${item.date} \vert{} 📍 ${item.location || 'N/A'}` : `Posted: ${item.date}`}</td>
                     <td><button class="action-btn" onclick="deletePublishedItem(${item.id})">Delete</button></td>
                 `;
                 publishedTableBody.appendChild(row);
@@ -513,6 +523,9 @@
             items.unshift(newItem);
             localStorage.setItem('polaris_published_content', JSON.stringify(items));
 
+            // Notify open public tabs in real-time AFTER storage is updated
+            notifyPublicTabs('NEW_POST_PUBLISHED');
+
             alert('Published successfully!');
             publishForm.reset();
             eventFields.forEach(f => f.classList.add('hidden'));
@@ -524,6 +537,9 @@
                 let items = getPublishedItems().filter(item => item.id !== id);
                 localStorage.setItem('polaris_published_content', JSON.stringify(items));
                 renderPublishedTable();
+
+                // Notify open public tabs in real-time
+                notifyPublicTabs('NEW_POST_PUBLISHED');
             }
         };
 
@@ -594,14 +610,19 @@
             }
         });
 
+        // Listen for incoming submissions from public page
+        polarisChannel.onmessage = (event) => {
+            if (event.data && event.data.type === 'NEW_APPLICATION') {
+                renderTable();
+            }
+        };
+
         searchInput.addEventListener('input', renderTable);
         filterCategory.addEventListener('change', renderTable);
 
         // INITIAL LOAD
         renderPublishedTable();
         renderTable();
-
-        
     </script>
 </body>
 </html>

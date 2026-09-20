@@ -300,7 +300,6 @@
         </div>
         <ul class="sidebar-menu">
             <li><a href="#clubOverviewSection" class="sidebar-link active">📊 Dashboard Overview</a></li>
-            <!-- Root-relative path prevents path duplication errors -->
             <li><a href="polarispost.html" class="sidebar-link">📢 News & Events</a></li>
             <li><a href="#registrationForms" class="sidebar-link">✍️ Player Application</a></li>
         </ul>
@@ -492,12 +491,17 @@
             });
         });
 
+        // Initialize Broadcast Channel once globally
+        const polarisChannel = new BroadcastChannel('polaris_club_channel');
+
         // Save submissions to browser storage
         function saveApplication(data) {
             let existingSubmissions = JSON.parse(localStorage.getItem('polaris_applications')) || [];
             existingSubmissions.push(data);
             localStorage.setItem('polaris_applications', JSON.stringify(existingSubmissions));
         }
+
+        /* FIX 1: Consolidated form submit listeners to avoid duplicate event handlers and handle BroadcastChannel messaging directly inside the submit flow */
 
         // 1. KTRH Form Submission
         document.getElementById('ktrhForm').addEventListener('submit', function(e) {
@@ -515,6 +519,8 @@
             };
 
             saveApplication(applicantData);
+            polarisChannel.postMessage({ type: 'NEW_APPLICATION', timestamp: Date.now() });
+
             alert(`Thank you ${applicantData.fullName}! Your KTRH Staff application has been submitted.`);
             this.reset();
         });
@@ -535,8 +541,30 @@
             };
 
             saveApplication(applicantData);
+            polarisChannel.postMessage({ type: 'NEW_APPLICATION', timestamp: Date.now() });
+
             alert(`Thank you ${applicantData.fullName}! Your Guest application has been submitted.`);
             this.reset();
+        });
+
+        /* FIX 2: Safely handle cross-tab communication events without making invalid function calls to non-existent functions on this page */
+
+        // Listen for real-time broadcasts from Admin or other tabs
+        polarisChannel.onmessage = (event) => {
+            if (event.data && event.data.type === 'NEW_POST_PUBLISHED') {
+                if (typeof renderFeed === 'function') {
+                    renderFeed();
+                }
+            }
+        };
+
+        // Listen for Storage changes from other windows/tabs
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'polaris_published_content' || event.key === 'polaris_applications') {
+                if (typeof renderFeed === 'function') {
+                    renderFeed();
+                }
+            }
         });
     </script>
 </body>
