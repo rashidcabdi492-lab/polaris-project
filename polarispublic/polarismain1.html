@@ -195,6 +195,32 @@
             gap: 10px;
         }
 
+        /* Live Feed / Dynamic News Cards */
+        .feed-card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 20px;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .feed-card.event {
+            border-left-color: #2e7d32;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .badge-post { background-color: #e3f2fd; color: #0d47a1; }
+        .badge-event { background-color: #e8f5e9; color: #2e7d32; }
+
         /* Content List Styling */
         ul, ol {
             padding-left: 20px;
@@ -300,8 +326,9 @@
         </div>
         <ul class="sidebar-menu">
             <li><a href="#clubOverviewSection" class="sidebar-link active">📊 Dashboard Overview</a></li>
-            <li><a href="polarispost.html" class="sidebar-link">📢 News & Events</a></li>
+            <li><a href="#newsSection" class="sidebar-link">📢 Live News & Events</a></li>
             <li><a href="#registrationForms" class="sidebar-link">✍️ Player Application</a></li>
+            <li><a href="admin.html" target="_blank" class="sidebar-link">⚙️ Admin Portal ↗</a></li>
         </ul>
     </aside>
 
@@ -317,12 +344,21 @@
 
         <div class="container">
 
-            <!-- 1. CLUB OVERVIEW SECTION (AT TOP) -->
+            <!-- DYNAMIC PUBLISHED NEWS & EVENTS SECTION -->
+            <div id="newsSection">
+                <h2 class="section-title">📢 Latest Club Updates & Events</h2>
+                <div id="liveFeedContainer">
+                    <!-- Dynamic posts loaded from Firebase Realtime Database -->
+                    <p style="text-align: center; color: #666;">Loading latest updates...</p>
+                </div>
+            </div>
+
+            <!-- CLUB OVERVIEW SECTION -->
             <div id="clubOverviewSection">
                 <h2 class="section-title">ℹ️ Club Overview</h2>
                 <div class="grid">
 
-                    <!-- Section 1: Reasons for Formation -->
+                    <!-- Reasons for Formation -->
                     <div class="card">
                         <h2>⚽ Reasons for Formation</h2>
                         <ul>
@@ -333,7 +369,7 @@
                         </ul>
                     </div>
 
-                    <!-- Section 2: Club Rules -->
+                    <!-- Club Rules -->
                     <div class="card">
                         <h2>📋 Rules of Polaris FC</h2>
                         <ol>
@@ -345,7 +381,7 @@
                         </ol>
                     </div>
 
-                    <!-- Section 3: How to Join -->
+                    <!-- How to Join -->
                     <div class="card">
                         <h2>🤝 How to Join</h2>
                         <ul>
@@ -359,7 +395,7 @@
                 </div>
             </div>
 
-            <!-- 2. PLAYER REGISTRATION FORMS -->
+            <!-- PLAYER REGISTRATION FORMS -->
             <h2 class="section-title" id="registrationForms">✍️ Join Polaris FC</h2>
             <div class="forms-wrapper">
                 
@@ -486,15 +522,16 @@
         });
     </script>
 
-    <!-- Firebase Data Submission Script -->
+    <!-- FIREBASE REALTIME DATABASE SCRIPT -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // REPLACE WITH YOUR FIREBASE CONFIG
+        // REPLACE THESE PLACEHOLDERS WITH YOUR ACTUAL FIREBASE CREDENTIALS
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
             projectId: "YOUR_PROJECT_ID",
             storageBucket: "YOUR_PROJECT_ID.appspot.com",
             messagingSenderId: "YOUR_SENDER_ID",
@@ -502,7 +539,39 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const db = getDatabase(app);
+
+        // References matching Admin Panel
+        const postsRef = ref(db, 'polaris_published_content');
+        const appsRef = ref(db, 'polaris_applications');
+
+        // Load Live Feed (News & Events published from Admin Panel)
+        const liveFeedContainer = document.getElementById('liveFeedContainer');
+        onValue(postsRef, (snapshot) => {
+            const postsData = snapshot.val() || {};
+            liveFeedContainer.innerHTML = '';
+            const keys = Object.keys(postsData);
+
+            if (keys.length === 0) {
+                liveFeedContainer.innerHTML = `<p style="text-align: center; color: #666;">No announcements or events posted yet. Check back soon!</p>`;
+                return;
+            }
+
+            keys.reverse().forEach(key => {
+                const item = postsData[key];
+                const isEvent = item.type === 'event';
+                const cardDiv = document.createElement('div');
+                cardDiv.className = `feed-card ${isEvent ? 'event' : ''}`;
+                
+                cardDiv.innerHTML = `
+                    <span class="badge ${isEvent ? 'badge-event' : 'badge-post'}">${isEvent ? 'UPCOMING EVENT' : 'NEWS UPDATE'}</span>
+                    <h3>${item.title}</h3>
+                    ${isEvent ? `<p><strong>📅 Date:</strong> ${item.date} | <strong>⏰ Time:</strong> ${item.time \vert{}\vert{} 'TBD'} \vert{} <strong>📍 Location:</strong> ${item.location || 'TBD'}</p>` : `<p style="font-size: 0.85rem; color: #66";>Published on: ${item.date}</p>`}
+                    <p>${item.content.replace(/\n/g, '<br>')}</p>
+                `;
+                liveFeedContainer.appendChild(cardDiv);
+            });
+        });
 
         // KTRH Form Submission
         document.getElementById('ktrhForm').addEventListener('submit', async function(e) {
@@ -515,12 +584,12 @@
                 affiliation: document.getElementById('ktrhDept').value,
                 location: 'KTRH Hospital',
                 position: document.getElementById('ktrhPosition').value,
-                submittedAt: serverTimestamp()
+                submittedAt: new Date().toISOString().split('T')[0]
             };
 
             try {
-                await addDoc(collection(db, "applications"), applicantData);
-                alert(`Thank you ${applicantData.fullName}! Your KTRH Staff application has been submitted.`);
+                await push(appsRef, applicantData);
+                alert(`Thank you ${applicantData.fullName}! Your KTRH Staff application has been submitted successfully.`);
                 this.reset();
             } catch (error) {
                 console.error("Error submitting application:", error);
@@ -539,12 +608,12 @@
                 affiliation: document.getElementById('guestOccupation').value,
                 location: document.getElementById('guestLocation').value,
                 position: document.getElementById('guestPosition').value,
-                submittedAt: serverTimestamp()
+                submittedAt: new Date().toISOString().split('T')[0]
             };
 
             try {
-                await addDoc(collection(db, "applications"), applicantData);
-                alert(`Thank you ${applicantData.fullName}! Your Guest application has been submitted.`);
+                await push(appsRef, applicantData);
+                alert(`Thank you ${applicantData.fullName}! Your Guest application has been submitted successfully.`);
                 this.reset();
             } catch (error) {
                 console.error("Error submitting application:", error);
