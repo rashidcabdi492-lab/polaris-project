@@ -448,9 +448,8 @@
         </footer>
     </div>
 
-    <!-- JavaScript Data Handler & Sidebar Control -->
+    <!-- UI Sidebar Control Script -->
     <script>
-        // --- SIDEBAR TOGGLE & NAVIGATION LOGIC ---
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
         const openSidebarBtn = document.getElementById('openSidebar');
@@ -476,94 +475,80 @@
         sidebarLinks.forEach(link => {
             link.addEventListener('click', function(e) {
                 const href = this.getAttribute('href');
-
-                // If navigating to an external page / HTML file, allow natural browser navigation
                 if (href && !href.startsWith('#')) {
                     closeNav();
                     return; 
                 }
-
-                // For internal anchor scroll links
                 sidebarLinks.forEach(l => l.classList.remove('active'));
                 this.classList.add('active');
-
                 closeNav();
             });
         });
+    </script>
 
-        // Initialize Broadcast Channel once globally
-        const polarisChannel = new BroadcastChannel('polaris_club_channel');
+    <!-- Firebase Data Submission Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Save submissions to browser storage
-        function saveApplication(data) {
-            let existingSubmissions = JSON.parse(localStorage.getItem('polaris_applications')) || [];
-            existingSubmissions.push(data);
-            localStorage.setItem('polaris_applications', JSON.stringify(existingSubmissions));
-        }
+        // REPLACE WITH YOUR FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
-        /* FIX 1: Consolidated form submit listeners to avoid duplicate event handlers and handle BroadcastChannel messaging directly inside the submit flow */
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        // 1. KTRH Form Submission
-        document.getElementById('ktrhForm').addEventListener('submit', function(e) {
+        // KTRH Form Submission
+        document.getElementById('ktrhForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const applicantData = {
-                id: Date.now(),
                 fullName: document.getElementById('ktrhName').value,
                 phone: document.getElementById('ktrhPhone').value,
                 memberCategory: 'KTRH Staff',
                 affiliation: document.getElementById('ktrhDept').value,
                 location: 'KTRH Hospital',
                 position: document.getElementById('ktrhPosition').value,
-                submittedAt: new Date().toLocaleString()
+                submittedAt: serverTimestamp()
             };
 
-            saveApplication(applicantData);
-            polarisChannel.postMessage({ type: 'NEW_APPLICATION', timestamp: Date.now() });
-
-            alert(`Thank you ${applicantData.fullName}! Your KTRH Staff application has been submitted.`);
-            this.reset();
+            try {
+                await addDoc(collection(db, "applications"), applicantData);
+                alert(`Thank you ${applicantData.fullName}! Your KTRH Staff application has been submitted.`);
+                this.reset();
+            } catch (error) {
+                console.error("Error submitting application:", error);
+                alert("Failed to submit. Please check your internet connection.");
+            }
         });
 
-        // 2. Non-KTRH Guest Form Submission
-        document.getElementById('nonKtrhForm').addEventListener('submit', function(e) {
+        // Non-KTRH Guest Form Submission
+        document.getElementById('nonKtrhForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const applicantData = {
-                id: Date.now(),
                 fullName: document.getElementById('guestName').value,
                 phone: document.getElementById('guestPhone').value,
                 memberCategory: 'Non-KTRH Guest',
                 affiliation: document.getElementById('guestOccupation').value,
                 location: document.getElementById('guestLocation').value,
                 position: document.getElementById('guestPosition').value,
-                submittedAt: new Date().toLocaleString()
+                submittedAt: serverTimestamp()
             };
 
-            saveApplication(applicantData);
-            polarisChannel.postMessage({ type: 'NEW_APPLICATION', timestamp: Date.now() });
-
-            alert(`Thank you ${applicantData.fullName}! Your Guest application has been submitted.`);
-            this.reset();
-        });
-
-        /* FIX 2: Safely handle cross-tab communication events without making invalid function calls to non-existent functions on this page */
-
-        // Listen for real-time broadcasts from Admin or other tabs
-        polarisChannel.onmessage = (event) => {
-            if (event.data && event.data.type === 'NEW_POST_PUBLISHED') {
-                if (typeof renderFeed === 'function') {
-                    renderFeed();
-                }
-            }
-        };
-
-        // Listen for Storage changes from other windows/tabs
-        window.addEventListener('storage', (event) => {
-            if (event.key === 'polaris_published_content' || event.key === 'polaris_applications') {
-                if (typeof renderFeed === 'function') {
-                    renderFeed();
-                }
+            try {
+                await addDoc(collection(db, "applications"), applicantData);
+                alert(`Thank you ${applicantData.fullName}! Your Guest application has been submitted.`);
+                this.reset();
+            } catch (error) {
+                console.error("Error submitting application:", error);
+                alert("Failed to submit. Please check your internet connection.");
             }
         });
     </script>
