@@ -65,7 +65,7 @@
             transition: background 0.2s, color 0.2s;
         }
 
-        .sidebar-menu li a:hover, 
+        .sidebar-menu li a:hover,
         .sidebar-menu li a.active {
             background-color: var(--primary-color);
             color: white;
@@ -74,9 +74,9 @@
         /* --- LAYOUT WRAPPER --- */
         .main-wrapper {
             flex-grow: 1;
+            min-width: 0;
             margin-left: var(--sidebar-width);
             transition: margin-left 0.3s ease;
-            width: 100%;
         }
 
         .main-wrapper.expanded {
@@ -110,10 +110,29 @@
             flex-grow: 1;
         }
 
+        .header-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            font-size: 0.9rem;
+            gap: 2px;
+        }
+
         .container {
             max-width: 1200px;
             margin: 30px auto;
             padding: 0 20px;
+        }
+
+        .config-banner {
+            display: none;
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            font-weight: 600;
         }
 
         /* --- CARDS & SECTIONS --- */
@@ -159,8 +178,8 @@
             font-size: 0.9rem;
         }
 
-        .form-group input, 
-        .form-group select, 
+        .form-group input,
+        .form-group select,
         .form-group textarea {
             padding: 10px;
             border: 1px solid #ccc;
@@ -185,6 +204,8 @@
             font-size: 0.95rem;
             cursor: pointer;
         }
+
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .btn-green { background-color: #2e7d32; }
         .btn-green:hover { background-color: #1b5e20; }
@@ -273,6 +294,8 @@
             .sidebar { transform: translateX(-100%); }
             .sidebar.active-mobile { transform: translateX(0); }
             .main-wrapper { margin-left: 0; }
+            header { padding: 15px 20px; }
+            header h1 { font-size: 1.3rem; }
         }
     </style>
 </head>
@@ -287,7 +310,7 @@
             <li><a href="#publish" class="nav-link active" data-target="publishSection">📢 Publish News / Event</a></li>
             <li><a href="#published" class="nav-link" data-target="publishedSection">📋 Published Items</a></li>
             <li><a href="#applications" class="nav-link" data-target="applicationsSection">👥 Applications</a></li>
-            <li><a href="public.html" target="_blank">🌐 View Public Site ↗</a></li>
+            <li><a href="polarismain1.html" target="_blank" rel="noopener">🌐 View Public Site ↗</a></li>
         </ul>
     </aside>
 
@@ -297,18 +320,23 @@
         <header>
             <button class="hamburger-btn" id="menuToggle" title="Toggle Menu">☰</button>
             <h1 id="headerTitle">Publish Update</h1>
-            <span id="totalCount">Total Applicants: 0</span>
+            <div class="header-info">
+                <span id="connStatus">⚪ Connecting…</span>
+                <span id="totalCount">Total Applicants: 0</span>
+            </div>
         </header>
 
         <div class="container">
-            
+
+            <div class="config-banner" id="configBanner"></div>
+
             <!-- SECTION 1: PUBLISH POST OR EVENT -->
             <section id="publishSection" class="admin-section active">
                 <div class="admin-card">
                     <h2>📢 Create & Publish Update (Post or Event)</h2>
                     <form id="publishForm">
                         <div class="form-grid">
-                            
+
                             <div class="form-group">
                                 <label for="postType">Content Type</label>
                                 <select id="postType" required>
@@ -345,7 +373,7 @@
 
                         </div>
 
-                        <button type="submit" class="btn btn-green">Publish to Public Site</button>
+                        <button type="submit" class="btn btn-green" id="publishBtn">Publish to Public Site</button>
                     </form>
                 </div>
             </section>
@@ -376,10 +404,10 @@
             <section id="applicationsSection" class="admin-section">
                 <div class="admin-card">
                     <h2>👥 Player Applications</h2>
-                    
+
                     <div class="controls">
                         <input type="text" id="searchInput" class="search-box" placeholder="Search by name, phone, or position...">
-                        
+
                         <select id="filterCategory" class="filter-box">
                             <option value="ALL">All Categories</option>
                             <option value="KTRH Staff">KTRH Staff</option>
@@ -414,216 +442,269 @@
         </div>
     </div>
 
-    <!-- FIREBASE SDK (MODULAR v9+) -->
+    <!-- UI SCRIPT (independent of Firebase, so the sidebar works even if Firebase fails) -->
+    <script>
+        (function () {
+            var menuToggle = document.getElementById('menuToggle');
+            var sidebar = document.getElementById('sidebar');
+            var mainWrapper = document.getElementById('mainWrapper');
+            var navLinks = document.querySelectorAll('.nav-link');
+            var adminSections = document.querySelectorAll('.admin-section');
+            var headerTitle = document.getElementById('headerTitle');
+
+            menuToggle.addEventListener('click', function () {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.toggle('active-mobile');
+                } else {
+                    sidebar.classList.toggle('collapsed');
+                    mainWrapper.classList.toggle('expanded');
+                }
+            });
+
+            navLinks.forEach(function (link) {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    navLinks.forEach(function (l) { l.classList.remove('active'); });
+                    this.classList.add('active');
+
+                    adminSections.forEach(function (s) { s.classList.remove('active'); });
+                    document.getElementById(this.getAttribute('data-target')).classList.add('active');
+
+                    headerTitle.textContent = this.textContent.replace(/^[^\s]+\s/, '');
+
+                    if (window.innerWidth <= 768) {
+                        sidebar.classList.remove('active-mobile');
+                    }
+                });
+            });
+
+            // Show/hide event-only fields
+            var postType = document.getElementById('postType');
+            var eventFields = document.querySelectorAll('.event-field');
+            var eventDate = document.getElementById('eventDate');
+            postType.addEventListener('change', function () {
+                var isEvent = this.value === 'event';
+                eventFields.forEach(function (f) { f.classList.toggle('hidden', !isEvent); });
+                eventDate.required = isEvent;
+            });
+        })();
+    </script>
+
+    <!-- FIREBASE SCRIPT -->
     <script type="module">
+        import { firebaseConfig, configProblem, withTimeout, friendlyError } from "./firebase-config.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // REPLACE THESE PLACEHOLDERS WITH YOUR ACTUAL FIREBASE CREDENTIALS
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+        // Escape user-supplied text before putting it in innerHTML
+        function esc(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        // Database References
-        const postsRef = ref(db, 'polaris_published_content');
-        const appsRef = ref(db, 'polaris_applications');
-
-        // Local state holders
-        let currentPublishedItems = {};
-        let currentApplications = {};
-
-        // SIDEBAR TOGGLE & SECTION SWITCHING
-        const menuToggle = document.getElementById('menuToggle');
-        const sidebar = document.getElementById('sidebar');
-        const mainWrapper = document.getElementById('mainWrapper');
-        const navLinks = document.querySelectorAll('.nav-link');
-        const adminSections = document.querySelectorAll('.admin-section');
-        const headerTitle = document.getElementById('headerTitle');
-
-        menuToggle.addEventListener('click', () => {
-            if (window.innerWidth <= 768) {
-                sidebar.classList.toggle('active-mobile');
-            } else {
-                sidebar.classList.toggle('collapsed');
-                mainWrapper.classList.toggle('expanded');
-            }
-        });
-
-        navLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                if (this.getAttribute('target') === '_blank') return;
-                e.preventDefault();
-
-                navLinks.forEach(l => l.classList.remove('active'));
-                this.classList.add('active');
-
-                adminSections.forEach(s => s.classList.remove('active'));
-                const targetId = this.getAttribute('data-target');
-                document.getElementById(targetId).classList.add('active');
-
-                headerTitle.textContent = this.textContent.replace(/^[^\s]+\s/, '');
-
-                if (window.innerWidth <= 768) {
-                    sidebar.classList.remove('active-mobile');
-                }
-            });
-        });
-
-        // FORM LOGIC FOR POSTS & EVENTS
+        const configBanner = document.getElementById('configBanner');
+        const connStatus = document.getElementById('connStatus');
         const postType = document.getElementById('postType');
         const eventFields = document.querySelectorAll('.event-field');
+        const eventDateInput = document.getElementById('eventDate');
         const publishForm = document.getElementById('publishForm');
+        const publishBtn = document.getElementById('publishBtn');
         const publishedTableBody = document.getElementById('publishedTableBody');
-
-        postType.addEventListener('change', function() {
-            if (this.value === 'event') {
-                eventFields.forEach(f => f.classList.remove('hidden'));
-            } else {
-                eventFields.forEach(f => f.classList.add('hidden'));
-            }
-        });
-
-        // REAL-TIME LISTENER: PUBLISHED POSTS/EVENTS
-        onValue(postsRef, (snapshot) => {
-            currentPublishedItems = snapshot.val() || {};
-            renderPublishedTable();
-        });
-
-        function renderPublishedTable() {
-            publishedTableBody.innerHTML = '';
-            const keys = Object.keys(currentPublishedItems);
-
-            if (keys.length === 0) {
-                publishedTableBody.innerHTML = `<tr><td colspan="4" class="empty-msg">No custom posts or events published yet.</td></tr>`;
-                return;
-            }
-
-            // Render in reverse chronological order
-            keys.reverse().forEach(key => {
-                const item = currentPublishedItems[key];
-                const isEvent = item.type === 'event';
-                const badgeClass = isEvent ? 'badge-guest' : 'badge-ktrh';
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td><span class="badge ${badgeClass}">${isEvent ? 'EVENT' : 'POST'}</span></td>
-                    <td><strong>${item.title}</strong></td>
-                    <td>${isEvent ? `📅 ${item.date} \vert{} 📍 ${item.location || 'N/A'}` : `Posted: ${item.date}`}</td>
-                    <td><button class="action-btn" data-id="${key}">Delete</button></td>
-                `;
-                row.querySelector('.action-btn').addEventListener('click', () => deletePublishedItem(key));
-                publishedTableBody.appendChild(row);
-            });
-        }
-
-        publishForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const type = postType.value;
-            const newItem = {
-                type: type,
-                title: document.getElementById('postTitle').value,
-                content: document.getElementById('postContent').value,
-                date: type === 'event' ? (document.getElementById('eventDate').value || 'TBD') : new Date().toISOString().split('T')[0],
-                time: type === 'event' ? document.getElementById('eventTime').value : null,
-                location: type === 'event' ? document.getElementById('eventVenue').value : null,
-                createdAt: Date.now()
-            };
-
-            // Push to Firebase (syncs automatically to all devices)
-            push(postsRef, newItem)
-                .then(() => {
-                    alert('Published successfully to cloud database!');
-                    publishForm.reset();
-                    eventFields.forEach(f => f.classList.add('hidden'));
-                })
-                .catch((err) => alert('Error publishing: ' + err.message));
-        });
-
-        function deletePublishedItem(firebaseKey) {
-            if (confirm("Delete this published post/event everywhere?")) {
-                remove(ref(db, `polaris_published_content/${firebaseKey}`));
-            }
-        }
-
-        // REAL-TIME LISTENER: APPLICANTS TABLE LOGIC
         const tableBody = document.getElementById('applicantTableBody');
         const searchInput = document.getElementById('searchInput');
         const filterCategory = document.getElementById('filterCategory');
         const totalCountEl = document.getElementById('totalCount');
         const clearAllBtn = document.getElementById('clearAllBtn');
 
-        onValue(appsRef, (snapshot) => {
-            currentApplications = snapshot.val() || {};
-            renderTable();
-        });
-
-        function renderTable() {
-            const keys = Object.keys(currentApplications);
-            const searchTerm = searchInput.value.toLowerCase();
-            const selectedCategory = filterCategory.value;
-
-            const filteredKeys = keys.filter(key => {
-                const app = currentApplications[key];
-                const matchesSearch = (app.fullName && app.fullName.toLowerCase().includes(searchTerm)) || 
-                                      (app.phone && app.phone.toLowerCase().includes(searchTerm)) ||
-                                      (app.position && app.position.toLowerCase().includes(searchTerm));
-
-                const matchesCategory = selectedCategory === 'ALL' || app.memberCategory === selectedCategory;
-
-                return matchesSearch && matchesCategory;
-            });
-
-            totalCountEl.textContent = `Total Applicants: ${filteredKeys.length}`;
-            tableBody.innerHTML = '';
-
-            if (filteredKeys.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="8" class="empty-msg">No applicant records found.</td></tr>`;
-                return;
-            }
-
-            filteredKeys.reverse().forEach(key => {
-                const appData = currentApplications[key];
-                const badgeClass = appData.memberCategory === 'KTRH Staff' ? 'badge-ktrh' : 'badge-guest';
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${appData.submittedAt || 'N/A'}</td>
-                    <td><strong>${appData.fullName || ''}</strong></td>
-                    <td><a href="tel:${appData.phone}">${appData.phone || ''}</a></td>
-                    <td><span class="badge ${badgeClass}">${appData.memberCategory || 'N/A'}</span></td>
-                    <td>${appData.affiliation || 'N/A'}</td>
-                    <td>${appData.location || 'N/A'}</td>
-                    <td>${appData.position || 'N/A'}</td>
-                    <td><button class="action-btn" data-id="${key}">Delete</button></td>
-                `;
-                row.querySelector('.action-btn').addEventListener('click', () => deleteRecord(key));
-                tableBody.appendChild(row);
-            });
+        function showBanner(message) {
+            configBanner.textContent = '⚠️ ' + message;
+            configBanner.style.display = 'block';
         }
 
-        function deleteRecord(firebaseKey) {
-            if (confirm("Are you sure you want to delete this applicant?")) {
-                remove(ref(db, `polaris_applications/${firebaseKey}`));
+        const problem = configProblem();
+        if (problem) {
+            showBanner(problem);
+            connStatus.textContent = '🔴 Not configured';
+            publishForm.addEventListener('submit', (e) => { e.preventDefault(); alert(problem); });
+        } else {
+            try {
+                start();
+            } catch (err) {
+                console.error(err);
+                showBanner(friendlyError(err));
+                connStatus.textContent = '🔴 Error';
             }
         }
 
-        clearAllBtn.addEventListener('click', function() {
-            if (confirm("Warning: This will permanently delete ALL applicant submissions on all devices.")) {
-                remove(appsRef);
-            }
-        });
+        function start() {
+            const app = initializeApp(firebaseConfig);
+            const db = getDatabase(app);
 
-        searchInput.addEventListener('input', renderTable);
-        filterCategory.addEventListener('change', renderTable);
+            const postsRef = ref(db, 'polaris_published_content');
+            const appsRef = ref(db, 'polaris_applications');
+
+            let currentPublishedItems = {};
+            let currentApplications = {};
+
+            // Live connection indicator
+            onValue(ref(db, '.info/connected'), (snap) => {
+                connStatus.textContent = snap.val() ? '🟢 Connected' : '🔴 Not connected';
+            });
+
+            // REAL-TIME LISTENER: PUBLISHED POSTS/EVENTS
+            onValue(postsRef, (snapshot) => {
+                currentPublishedItems = snapshot.val() || {};
+                renderPublishedTable();
+            }, (err) => {
+                console.error('Posts listener error:', err);
+                publishedTableBody.innerHTML = `<tr><td colspan="4" class="empty-msg">Could not load posts: ${esc(friendlyError(err))}</td></tr>`;
+            });
+
+            function renderPublishedTable() {
+                publishedTableBody.innerHTML = '';
+                const keys = Object.keys(currentPublishedItems);
+
+                if (keys.length === 0) {
+                    publishedTableBody.innerHTML = `<tr><td colspan="4" class="empty-msg">No custom posts or events published yet.</td></tr>`;
+                    return;
+                }
+
+                keys.reverse().forEach(key => {
+                    const item = currentPublishedItems[key];
+                    const isEvent = item.type === 'event';
+                    const badgeClass = isEvent ? 'badge-guest' : 'badge-ktrh';
+
+                    const details = isEvent
+                        ? `📅 ${esc(item.date)}${item.time ? ' ⏰ ' + esc(item.time) : ''} | 📍 ${esc(item.location || 'N/A')}`
+                        : `Posted: ${esc(item.date)}`;
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><span class="badge ${badgeClass}">${isEvent ? 'EVENT' : 'POST'}</span></td>
+                        <td><strong>${esc(item.title)}</strong></td>
+                        <td>${details}</td>
+                        <td><button class="action-btn" data-id="${esc(key)}">Delete</button></td>
+                    `;
+                    row.querySelector('.action-btn').addEventListener('click', () => deletePublishedItem(key));
+                    publishedTableBody.appendChild(row);
+                });
+            }
+
+            publishForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const type = postType.value;
+                const newItem = {
+                    type: type,
+                    title: document.getElementById('postTitle').value.trim(),
+                    content: document.getElementById('postContent').value.trim(),
+                    date: type === 'event' ? (eventDateInput.value || 'TBD') : new Date().toISOString().split('T')[0],
+                    time: type === 'event' ? document.getElementById('eventTime').value.trim() : null,
+                    location: type === 'event' ? document.getElementById('eventVenue').value.trim() : null,
+                    createdAt: Date.now()
+                };
+
+                publishBtn.disabled = true;
+                publishBtn.textContent = 'Publishing...';
+
+                try {
+                    await withTimeout(push(postsRef, newItem));
+                    alert('Published successfully! It is now live on the public site.');
+                    publishForm.reset();
+                    eventFields.forEach(f => f.classList.add('hidden'));
+                    eventDateInput.required = false;
+                } catch (err) {
+                    console.error('Publish error:', err);
+                    alert('Could not publish.\n\n' + friendlyError(err));
+                } finally {
+                    publishBtn.disabled = false;
+                    publishBtn.textContent = 'Publish to Public Site';
+                }
+            });
+
+            function deletePublishedItem(firebaseKey) {
+                if (confirm("Delete this published post/event everywhere?")) {
+                    withTimeout(remove(ref(db, `polaris_published_content/${firebaseKey}`)))
+                        .catch((err) => alert('Error deleting: ' + friendlyError(err)));
+                }
+            }
+
+            // REAL-TIME LISTENER: APPLICANTS
+            onValue(appsRef, (snapshot) => {
+                currentApplications = snapshot.val() || {};
+                renderTable();
+            }, (err) => {
+                console.error('Applications listener error:', err);
+                tableBody.innerHTML = `<tr><td colspan="8" class="empty-msg">Could not load applications: ${esc(friendlyError(err))}</td></tr>`;
+            });
+
+            function renderTable() {
+                const keys = Object.keys(currentApplications);
+                const searchTerm = searchInput.value.toLowerCase();
+                const selectedCategory = filterCategory.value;
+
+                const filteredKeys = keys.filter(key => {
+                    const a = currentApplications[key];
+                    const matchesSearch = (a.fullName && a.fullName.toLowerCase().includes(searchTerm)) ||
+                                          (a.phone && a.phone.toLowerCase().includes(searchTerm)) ||
+                                          (a.position && a.position.toLowerCase().includes(searchTerm));
+                    const matchesCategory = selectedCategory === 'ALL' || a.memberCategory === selectedCategory;
+                    return matchesSearch && matchesCategory;
+                });
+
+                totalCountEl.textContent = `Total Applicants: ${filteredKeys.length}`;
+                tableBody.innerHTML = '';
+
+                if (filteredKeys.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="8" class="empty-msg">No applicant records found.</td></tr>`;
+                    return;
+                }
+
+                filteredKeys.reverse().forEach(key => {
+                    const a = currentApplications[key];
+                    const badgeClass = a.memberCategory === 'KTRH Staff' ? 'badge-ktrh' : 'badge-guest';
+                    const phoneCell = a.phone
+                        ? `<a href="tel:${esc(a.phone)}">${esc(a.phone)}</a>`
+                        : 'N/A';
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${esc(a.submittedAt || 'N/A')}</td>
+                        <td><strong>${esc(a.fullName)}</strong></td>
+                        <td>${phoneCell}</td>
+                        <td><span class="badge ${badgeClass}">${esc(a.memberCategory || 'N/A')}</span></td>
+                        <td>${esc(a.affiliation || 'N/A')}</td>
+                        <td>${esc(a.location || 'N/A')}</td>
+                        <td>${esc(a.position || 'N/A')}</td>
+                        <td><button class="action-btn" data-id="${esc(key)}">Delete</button></td>
+                    `;
+                    row.querySelector('.action-btn').addEventListener('click', () => deleteRecord(key));
+                    tableBody.appendChild(row);
+                });
+            }
+
+            function deleteRecord(firebaseKey) {
+                if (confirm("Are you sure you want to delete this applicant?")) {
+                    withTimeout(remove(ref(db, `polaris_applications/${firebaseKey}`)))
+                        .catch((err) => alert('Error deleting: ' + friendlyError(err)));
+                }
+            }
+
+            clearAllBtn.addEventListener('click', function () {
+                if (confirm("Warning: This will permanently delete ALL applicant submissions on all devices.")) {
+                    withTimeout(remove(appsRef))
+                        .catch((err) => alert('Error clearing records: ' + friendlyError(err)));
+                }
+            });
+
+            searchInput.addEventListener('input', renderTable);
+            filterCategory.addEventListener('change', renderTable);
+        }
     </script>
 </body>
 </html>

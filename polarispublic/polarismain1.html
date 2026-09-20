@@ -566,7 +566,7 @@
                 cardDiv.innerHTML = `
                     <span class="badge ${isEvent ? 'badge-event' : 'badge-post'}">${isEvent ? 'UPCOMING EVENT' : 'NEWS UPDATE'}</span>
                     <h3>${item.title}</h3>
-                    ${isEvent ? `<p><strong>📅 Date:</strong> ${item.date} | <strong>⏰ Time:</strong> ${item.time \vert{}\vert{} 'TBD'} \vert{} <strong>📍 Location:</strong> ${item.location || 'TBD'}</p>` : `<p style="font-size: 0.85rem; color: #66";>Published on: ${item.date}</p>`}
+                    ${isEvent ? `<p><strong>📅 Date:</strong> ${item.date} | <strong>⏰ Time:</strong> ${item.time \vert{}\vert{} 'TBD'} \vert{} <strong>📍 Location:</strong> ${item.location || 'TBD'} </p>` : `<p style="font-size: 0.85rem; color: #66";>Published on: ${item.date}</p>`}
                     <p>${item.content.replace(/\n/g, '<br>')}</p>
                 `;
                 liveFeedContainer.appendChild(cardDiv);

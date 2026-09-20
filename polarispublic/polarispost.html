@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Polaris FC - Admin Post Portal</title>
+    <title>Polaris FC - Latest Posts & Upcoming Events</title>
     <style>
         :root {
             --primary-color: #0d47a1;
@@ -26,119 +26,177 @@
         header {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
-            padding: 30px 20px;
+            padding: 40px 20px;
             text-align: center;
         }
 
         header h1 {
             margin: 0;
-            font-size: 2.2rem;
+            font-size: 2.5rem;
+            letter-spacing: 1px;
         }
 
         header p {
-            margin: 5px 0 0 0;
+            font-size: 1.1rem;
+            margin-top: 8px;
             color: #e3f2fd;
         }
 
         .container {
-            max-width: 800px;
-            margin: 30px auto;
+            max-width: 1100px;
+            margin: -20px auto 40px auto;
             padding: 0 20px;
         }
 
-        .admin-card {
+        .feed-controls {
             background: #ffffff;
             border-radius: 8px;
-            padding: 30px;
+            padding: 15px 20px;
             box-shadow: var(--card-shadow);
-            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
         }
 
-        .admin-card h2 {
-            margin-top: 0;
+        .tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: none;
+            border: 2px solid var(--primary-color);
             color: var(--primary-color);
-            border-bottom: 2px solid #e3f2fd;
-            padding-bottom: 10px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
+            padding: 8px 18px;
+            border-radius: 20px;
             font-weight: bold;
-            margin-bottom: 8px;
-            color: var(--dark-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        input[type="text"],
-        input[type="date"],
-        input[type="time"],
-        select,
-        textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 1rem;
-            box-sizing: border-box;
-        }
-
-        textarea {
-            resize: vertical;
-            height: 120px;
-        }
-
-        .event-fields {
-            background: #f8fafc;
-            padding: 15px;
-            border-radius: 6px;
-            border-left: 4px solid #2e7d32;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .event-fields.active {
-            display: block;
-        }
-
-        .btn-submit {
+        .tab-btn.active, .tab-btn:hover {
             background-color: var(--primary-color);
             color: white;
-            border: none;
-            padding: 12px 25px;
-            font-size: 1rem;
+        }
+
+        .controls-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .live-status {
+            font-size: 0.85rem;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        .search-box {
+            padding: 8px 15px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            width: 250px;
+            max-width: 100%;
+        }
+
+        .feed-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+            gap: 25px;
+        }
+
+        .feed-card {
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .feed-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            font-size: 0.75rem;
             font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            width: 100%;
+            text-transform: uppercase;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            align-self: flex-start;
         }
 
-        .btn-submit:hover {
-            background-color: var(--secondary-color);
+        .badge-post {
+            background-color: #e3f2fd;
+            color: #0d47a1;
         }
 
-        .alert {
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            display: none;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .alert-success {
+        .badge-event {
             background-color: #e8f5e9;
             color: #2e7d32;
-            border: 1px solid #c8e6c9;
         }
 
-        .alert-error {
-            background-color: #ffebee;
-            color: #c62828;
-            border: 1px solid #ffcdd2;
+        .card-content {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-title {
+            margin: 0 0 10px 0;
+            color: var(--dark-color);
+            font-size: 1.3rem;
+        }
+
+        .card-meta {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .card-body {
+            font-size: 0.95rem;
+            color: #444;
+            flex-grow: 1;
+            margin-bottom: 15px;
+        }
+
+        .card-body p {
+            margin: 0;
+        }
+
+        .event-details {
+            background-color: #f8fafc;
+            border-left: 3px solid #2e7d32;
+            padding: 10px 12px;
+            border-radius: 0 5px 5px 0;
+            font-size: 0.88rem;
+            margin-bottom: 15px;
+        }
+
+        .event-details p {
+            margin: 4px 0;
+        }
+
+        .empty-feed {
+            text-align: center;
+            grid-column: 1 / -1;
+            padding: 50px 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            color: #666;
         }
 
         footer {
@@ -146,65 +204,34 @@
             padding: 20px;
             background-color: var(--dark-color);
             color: white;
+            margin-top: 50px;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>Polaris FC - Admin Portal</h1>
-        <p>Publish live news updates and upcoming events to the public feed.</p>
+        <h1>POLARIS FC - NEWS & EVENTS</h1>
+        <p>Stay updated with the latest club announcements, match fixtures, and hospital tournaments.</p>
     </header>
 
     <div class="container">
-        
-        <div class="admin-card">
-            <h2>Create New Post or Event</h2>
-            
-            <div id="statusAlert" class="alert"></div>
 
-            <form id="postForm">
-                <div class="form-group">
-                    <label for="postType">Update Type</label>
-                    <select id="postType" required>
-                        <option value="post">News & Announcement Post</option>
-                        <option value="event">Upcoming Event / Match</option>
-                    </select>
-                </div>
+        <div class="feed-controls">
+            <div class="tabs">
+                <button class="tab-btn active" data-filter="all">All Updates</button>
+                <button class="tab-btn" data-filter="post">News & Posts</button>
+                <button class="tab-btn" data-filter="event">Upcoming Events</button>
+            </div>
 
-                <div class="form-group">
-                    <label for="postTitle">Title</label>
-                    <input type="text" id="postTitle" placeholder="e.g., Weekend Match vs KTRH Staff FC" required>
-                </div>
+            <div class="controls-right">
+                <span class="live-status" id="liveStatus">⚪ Connecting…</span>
+                <input type="text" id="searchInput" class="search-box" placeholder="Search posts or events...">
+            </div>
+        </div>
 
-                <div class="form-group">
-                    <label for="postAuthor">Author / Department</label>
-                    <input type="text" id="postAuthor" placeholder="e.g., Polaris FC Management" required>
-                </div>
-
-                <!-- Conditional Event Fields -->
-                <div id="eventFieldsContainer" class="event-fields">
-                    <div class="form-group">
-                        <label for="eventDate">Event Date</label>
-                        <input type="date" id="eventDate">
-                    </div>
-                    <div class="form-group">
-                        <label for="eventTime">Event Time</label>
-                        <input type="time" id="eventTime">
-                    </div>
-                    <div class="form-group">
-                        <label for="eventLocation">Venue / Location</label>
-                        <input type="text" id="eventLocation" placeholder="e.g., KTRH Grounds">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="postContent">Content / Description</label>
-                    <textarea id="postContent" placeholder="Enter full announcement details here..." required></textarea>
-                </div>
-
-                <button type="submit" class="btn-submit" id="submitBtn">Publish to Live Feed</button>
-            </form>
+        <div class="feed-grid" id="feedContainer">
+            <div class="empty-feed"><p>Loading latest updates...</p></div>
         </div>
 
     </div>
@@ -213,12 +240,12 @@
         <p>&copy; 2026 Polaris FC - Kisii Teaching & Referral Hospital (KTRH). All rights reserved.</p>
     </footer>
 
-    <!-- FIREBASE REALTIME DATABASE SCRIPT -->
+    <!-- FIREBASE REAL-TIME SYNC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // REPLACE THESE PLACEHOLDERS WITH YOUR ACTUAL FIREBASE CREDENTIALS
+        // USE THE EXACT SAME CONFIG AS THE ADMIN PAGE AND THE MAIN PUBLIC PAGE
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -229,90 +256,144 @@
             appId: "YOUR_APP_ID"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        const feedContainer = document.getElementById('feedContainer');
+        const searchInput = document.getElementById('searchInput');
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const liveStatus = document.getElementById('liveStatus');
 
-        const postForm = document.getElementById('postForm');
-        const postTypeSelect = document.getElementById('postType');
-        const eventFieldsContainer = document.getElementById('eventFieldsContainer');
-        const statusAlert = document.getElementById('statusAlert');
-        const submitBtn = document.getElementById('submitBtn');
+        let currentFilter = 'all';
+        let allItems = []; // kept in memory and updated live from Firebase
 
-        // Toggle visibility of event fields based on selection
-        postTypeSelect.addEventListener('change', function() {
-            if (this.value === 'event') {
-                eventFieldsContainer.classList.add('active');
-            } else {
-                eventFieldsContainer.classList.remove('active');
+        // Escape user text before inserting into HTML
+        function esc(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // "2026-09-21" -> "21 Sep 2026"; other text (e.g. "Sep 21, 2026", "TBD") is shown as-is
+        function fmtDate(d) {
+            if (/^\d{4}-\d{2}-\d{2}$/.test(d || '')) {
+                const dt = new Date(d + 'T00:00:00');
+                return dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
             }
+            return d || 'TBD';
+        }
+
+        // "16:00" -> "4:00 PM"; free text like "4:00 PM EAT" is shown as-is
+        function fmtTime(t) {
+            const m = /^(\d{1,2}):(\d{2})$/.exec(t || '');
+            if (!m) return t;
+            const h = parseInt(m[1], 10);
+            return `${((h + 11) % 12) + 1}:${m[2]} ${h >= 12 ? 'PM' : 'AM'}`;
+        }
+
+        // Render posts/events into the page
+        function renderFeed(message) {
+            if (message) {
+                feedContainer.innerHTML = `<div class="empty-feed"><p>${esc(message)}</p></div>`;
+                return;
+            }
+
+            const searchTerm = searchInput.value.toLowerCase();
+
+            const filteredItems = allItems.filter(item => {
+                const matchesTab = currentFilter === 'all' || item.type === currentFilter;
+                const matchesSearch = (item.title || '').toLowerCase().includes(searchTerm) ||
+                                      (item.content || '').toLowerCase().includes(searchTerm);
+                return matchesTab && matchesSearch;
+            });
+
+            feedContainer.innerHTML = '';
+
+            if (filteredItems.length === 0) {
+                feedContainer.innerHTML = `
+                    <div class="empty-feed">
+                        <h3>No posts or events found</h3>
+                        <p>Check back later for new announcements from the Polaris FC management.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filteredItems.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'feed-card';
+
+                const isEvent = item.type === 'event';
+                const badgeText = isEvent ? 'Upcoming Event' : 'News & Post';
+                const badgeClass = isEvent ? 'badge-event' : 'badge-post';
+
+                card.innerHTML = `
+                    <div class="card-content">
+                        <span class="card-type-badge ${badgeClass}">${badgeText}</span>
+                        <h2 class="card-title">${esc(item.title)}</h2>
+                        <div class="card-meta">${isEvent ? 'Event' : 'Posted'} ${esc(fmtDate(item.date))}${item.author ? ' by ' + esc(item.author) : ''}</div>
+
+                        ${isEvent ? `
+                            <div class="event-details">
+                                <p>📅 <strong>Date:</strong> ${esc(fmtDate(item.date))}</p>
+                                ${item.time ? `<p>⏰ <strong>Time:</strong> ${esc(fmtTime(item.time))}</p>` : ''}
+                                ${item.location ? `<p>📍 <strong>Venue:</strong> ${esc(item.location)}</p>` : ''}
+                            </div>
+                        ` : ''}
+
+                        <div class="card-body">
+                            <p>${esc(item.content).replace(/\n/g, '<br>')}</p>
+                        </div>
+                    </div>
+                `;
+
+                feedContainer.appendChild(card);
+            });
+        }
+
+        // Tab filter switching
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', function () {
+                tabButtons.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.getAttribute('data-filter');
+                renderFeed();
+            });
         });
 
-        // Handle Form Submission
-        postForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
+        // Search input handling
+        searchInput.addEventListener('input', () => renderFeed());
 
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Publishing...';
-
-            const type = postTypeSelect.value;
-            const title = document.getElementById('postTitle').value.trim();
-            const author = document.getElementById('postAuthor').value.trim();
-            const content = document.getElementById('postContent').value.trim();
-            
-            // Format current date nicely if regular post date isn't explicitly filled
-            const todayStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-            
-            let dateVal = todayStr;
-            let timeVal = '';
-            let locationVal = '';
-
-            if (type === 'event') {
-                const rawDate = document.getElementById('eventDate').value;
-                if (rawDate) {
-                    dateVal = new Date(rawDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-                }
-                timeVal = document.getElementById('eventTime').value;
-                locationVal = document.getElementById('eventLocation').value.trim();
+        // Connect to Firebase
+        try {
+            if (firebaseConfig.apiKey === 'YOUR_API_KEY') {
+                throw new Error('Firebase is not configured yet. Paste the same firebaseConfig used in your admin page.');
             }
 
-            try {
-                // Reference to polaris_published_content node
-                const postsRef = ref(db, 'polaris_published_content');
-                const newPostRef = push(postsRef);
+            const app = initializeApp(firebaseConfig);
+            const db = getDatabase(app);
 
-                await set(newPostRef, {
-                    type: type,
-                    title: title,
-                    author: author,
-                    date: dateVal,
-                    time: timeVal,
-                    location: locationVal,
-                    content: content,
-                    createdAt: Date.now()
-                });
+            // Live connection indicator
+            onValue(ref(db, '.info/connected'), (snap) => {
+                liveStatus.textContent = snap.val() ? '🟢 Live' : '🔴 Offline';
+            });
 
-                // Show Success message
-                showAlert('Successfully published to the live feed!', 'success');
-                postForm.reset();
-                eventFieldsContainer.classList.remove('active');
+            // REAL-TIME FEED: fires immediately whenever the admin publishes or deletes something
+            onValue(ref(db, 'polaris_published_content'), (snapshot) => {
+                const data = snapshot.val() || {};
+                allItems = Object.entries(data)
+                    .map(([id, item]) => ({ id, ...item }))
+                    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // newest first
+                renderFeed();
+            }, (error) => {
+                console.error('Feed error:', error);
+                renderFeed('Could not load updates right now. Please try again later.');
+            });
 
-            } catch (error) {
-                console.error("Error writing data: ", error);
-                showAlert('Failed to publish. Check your Firebase credentials or console network tab.', 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Publish to Live Feed';
-            }
-        });
-
-        function showAlert(message, type) {
-            statusAlert.textContent = message;
-            statusAlert.className = `alert alert-${type}`;
-            statusAlert.style.display = 'block';
-
-            setTimeout(() => {
-                statusAlert.style.display = 'none';
-            }, 5000);
+        } catch (err) {
+            console.error(err);
+            liveStatus.textContent = '🔴 Not connected';
+            renderFeed(err.message);
         }
     </script>
 </body>
